@@ -18,6 +18,7 @@ return new class extends Migration
             $table->text('description');
             $table->string('location');
             $table->string('image_url')->nullable();
+            $table->enum('category', ['Music','Sports','Food & Drink','Arts','Education','Community']);
             $table->dateTime('start_time');
             $table->dateTime('end_time');
             $table->integer('capacity');

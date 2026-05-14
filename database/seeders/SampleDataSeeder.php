@@ -27,16 +27,24 @@ class SampleDataSeeder extends Seeder
         'role' => 'attendee',
     ]);
 
-    // 3. Tạo 1 sự kiện mẫu
-    Event::create([
-        'organizer_id' => $organizer->id,
-        'title' => 'Hội thảo Web Laravel 13',
-        'description' => 'Tìm hiểu về các tính năng mới nhất của Laravel',
-        'location' => 'Hội trường A1',
-        'start_time' => now()->addDays(7),
-        'end_time' => now()->addDays(7)->addHours(3),
-        'capacity' => 50,
-        'status' => 'published',
-    ]);
+    // 3. Tạo sự kiện mẫu với link ảnh demo
+    $images = [
+        'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?q=80&w=800'
+    ];
+
+    foreach ($images as $key => $url) {
+        Event::create([
+            'organizer_id' => $organizer->id,
+            'title' => "Sự kiện công nghệ số ",
+            'description' => "Mô tả chi tiết cho sự kiện hấp dẫn này...",
+            'location' => "Hội trường A1",
+            'image_url' => $url, // Dùng link ảnh demo
+            'category' => 'Education',
+            'start_time' => now()->addDays(7),
+            'end_time' => now()->addDays(7)->addHours(4),
+            'capacity' => 50,
+            'status' => 'published'
+        ]);
+    }
 }
 }
