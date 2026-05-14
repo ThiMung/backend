@@ -17,6 +17,10 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            
+            // Phân quyền: dùng enum để giới hạn chỉ 2 vai trò này
+            $table->enum('role', ['organizer', 'attendee'])->default('attendee');
+
             $table->rememberToken();
             $table->timestamps();
         });
