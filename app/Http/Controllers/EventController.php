@@ -87,6 +87,16 @@ class EventController extends Controller
                 : null,
         ];
     }
+
+    // Chức năng lấy danh sách sự kiện của 1 Organizer đang đăng nhập
+    public function getOrganizerEvents() {
+        $events = Event::where('organizer_id', Auth::id()) // Lọc chính xác theo ID từ token đăng nhập
+            ->withCount(['registrations as registered_count' => fn ($q) => $q->where('status', 'confirmed')])
+            ->orderBy('start_time')
+            ->get();
+
+        return response()->json(['events' => $events]);
+    }
     
     // Chức năng tạo sự kiện mới (dành cho Organizer)
     public function store(Request $request)
@@ -123,6 +133,6 @@ class EventController extends Controller
         return response()->json([
             'message' => 'Event created successfully as draft!',
             'event'   => $event
-        ], 21);
+        ], 201);
     }
 }

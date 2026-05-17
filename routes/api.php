@@ -24,6 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:organizer')->prefix('organizer')->group(function () {
         // API tạo sự kiện (nhận image_url từ Cloudinary do FE gửi lên) 
         Route::post('/events', [EventController::class, 'store']);
+        Route::get('/events', [EventController::class, 'getOrganizerEvents']);
     });
 
     // API dành riêng cho Attendee 
