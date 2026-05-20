@@ -14,6 +14,10 @@ class Review extends Model
         'comment',
     ];
 
+    protected $casts = [
+        'rating' => 'integer',
+    ];
+
     public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class);

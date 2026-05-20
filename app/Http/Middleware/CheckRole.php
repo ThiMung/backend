@@ -8,14 +8,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class CheckRole
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  Closure(Request): (Response)  $next
-     */
-    public function handle(Request $request, Closure $next, string $role)
+    public function handle(Request $request, Closure $next, string $role): Response
     {
-        // Kiểm tra user đã login và có đúng role không 
+        // Middleware này tách quyền truy cập giữa Organizer và Attendee.
         if (!$request->user() || $request->user()->role !== $role) {
             return response()->json(['message' => 'Trái quyền truy cập (Forbidden)'], 403);
         }
@@ -23,4 +18,3 @@ class CheckRole
         return $next($request);
     }
 }
-

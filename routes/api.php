@@ -1,34 +1,35 @@
 <?php
+
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\OrganizerEventController;
+use App\Http\Controllers\RegistrationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/events', [EventController::class, 'index']);
 Route::get('/events/{id}', [EventController::class, 'show']);
-// Nhóm công khai cho Organizer
+
 Route::prefix('organizer')->group(function () {
     Route::post('/register', [AuthController::class, 'registerOrganizer']);
     Route::post('/login', [AuthController::class, 'login']);
-    });
-    
-    // Nhóm công khai cho Attendee
-    Route::prefix('attendee')->group(function () {
-        Route::post('/register', [AuthController::class, 'registerAttendee']);
-        Route::post('/login', [AuthController::class, 'login']);
-        });
+});
 
-// Nhóm API yêu cầu đăng nhập (Sanctum)
+Route::prefix('attendee')->group(function () {
+    Route::post('/register', [AuthController::class, 'registerAttendee']);
+    Route::post('/login', [AuthController::class, 'login']);
+});
+
 Route::middleware('auth:sanctum')->group(function () {
-    
-    // API dành riêng cho Organizer 
+    // Organizer chỉ quản lý sự kiện thuộc tài khoản đang đăng nhập.
     Route::middleware('role:organizer')->prefix('organizer')->group(function () {
-        // API tạo sự kiện (nhận image_url từ Cloudinary do FE gửi lên) 
-        Route::post('/events', [EventController::class, 'store']);
-        Route::get('/events', [EventController::class, 'getOrganizerEvents']);
+        Route::get('/events', [OrganizerEventController::class, 'index']);
+        Route::post('/events', [OrganizerEventController::class, 'store']);
+        Route::patch('/events/{event}/status', [OrganizerEventController::class, 'updateStatus']);
+        Route::delete('/events/{event}', [OrganizerEventController::class, 'destroy']);
     });
 
-    // API dành riêng cho Attendee 
     Route::middleware('role:attendee')->prefix('attendee')->group(function () {
-        // Các route cho người tham gia viết ở đây
+        Route::post('/registrations', [RegistrationController::class, 'store']);
+        Route::delete('/registrations/{event}', [RegistrationController::class, 'destroy']);
     });
 });

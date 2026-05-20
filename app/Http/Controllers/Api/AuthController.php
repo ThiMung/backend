@@ -4,76 +4,70 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
 {
-    // Đăng ký cho vai trò Organizer
-    public function registerOrganizer(Request $request) {
-        $data = $request->validate([
-            'name' => 'required|string',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:8'
-        ]);
+    private const ROLES = ['organizer', 'attendee'];
 
-        $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
-            'role' => 'organizer' // Tự động gán quyền organizer 
-        ]);
-
-        return response()->json([
-            'token' => $user->createToken('auth_token')->plainTextToken,
-            'user' => $user
-        ]);
+    public function registerOrganizer(Request $request): JsonResponse
+    {
+        return $this->registerWithRole($request, 'organizer');
     }
 
-    // Đăng ký cho vai trò Attendee
-    public function registerAttendee(Request $request) {
-        $data = $request->validate([
-            'name' => 'required|string',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:8'
-        ]);
-
-        $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
-            'role' => 'attendee' // Tự động gán quyền attendee 
-        ]);
-
-        return response()->json([
-            'token' => $user->createToken('auth_token')->plainTextToken,
-            'user' => $user
-        ]);
+    public function registerAttendee(Request $request): JsonResponse
+    {
+        return $this->registerWithRole($request, 'attendee');
     }
 
-    // Hàm login chung có kiểm tra chéo vai trò
-    public function login(Request $request) {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-            'required_role' => 'required|in:organizer,attendee' // Frontend gửi kèm vai trò yêu cầu 
+    public function login(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+            'required_role' => ['required', Rule::in(self::ROLES)],
         ]);
 
-        $user = User::where('email', '=', $request->email, 'and')->first();
+        $user = User::where('email', $data['email'])->first();
 
-        // Kiểm tra tài khoản và mật khẩu
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (!$user || !Hash::check($data['password'], $user->password)) {
             return response()->json(['message' => 'Thông tin đăng nhập không chính xác'], 401);
         }
 
-        // CHẶN CHÉO: Nếu tài khoản không đúng role yêu cầu từ cổng đăng nhập đó
-        if ($user->role !== $request->required_role) {
+        // Chặn đăng nhập nhầm giữa cổng Organizer và Attendee.
+        if ($user->role !== $data['required_role']) {
             return response()->json(['message' => 'Bạn không có quyền truy cập vào cổng này'], 403);
         }
 
+        return $this->respondWithToken($user);
+    }
+
+    private function registerWithRole(Request $request, string $role): JsonResponse
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'unique:users,email'],
+            'password' => ['required', 'min:8'],
+        ]);
+
+        $user = User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => Hash::make($data['password']),
+            'role' => $role,
+        ]);
+
+        return $this->respondWithToken($user);
+    }
+
+    private function respondWithToken(User $user): JsonResponse
+    {
         return response()->json([
             'token' => $user->createToken('auth_token')->plainTextToken,
-            'user' => $user
+            'user' => $user,
         ]);
     }
 }

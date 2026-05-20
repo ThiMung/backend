@@ -14,6 +14,10 @@ class Registration extends Model
         'position',
     ];
 
+    protected $casts = [
+        'position' => 'integer',
+    ];
+
     public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class);
