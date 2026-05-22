@@ -23,27 +23,27 @@ class AuthController extends Controller
         return $this->registerWithRole($request, 'attendee');
     }
 
-    public function login(Request $request): JsonResponse
-    {
-        $data = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required'],
-            'required_role' => ['required', Rule::in(self::ROLES)],
-        ]);
+     public function login(Request $request): JsonResponse
+     {
+         $data = $request->validate([
+             'email' => ['required', 'email'],
+             'password' => ['required'],
+             'required_role' => ['required', Rule::in(self::ROLES)],
+         ]);
+ 
+         $user = User::where('email', $data['email'])->first();
 
-        $user = User::where('email', $data['email'])->first();
+         if (!$user || !Hash::check($data['password'], $user->password)) {
+             return response()->json(['message' => 'Thông tin đăng nhập không chính xác'], 401);
+         }
 
-        if (!$user || !Hash::check($data['password'], $user->password)) {
-            return response()->json(['message' => 'Thông tin đăng nhập không chính xác'], 401);
-        }
+        // Chặn đăng nhập nhầm giữa cổng Organizer và Attendee
+         if ($user->role !== $data['required_role']) {
+             return response()->json(['message' => 'Bạn không có quyền truy cập vào cổng này'], 403);
+         }
 
-        // Chặn đăng nhập nhầm giữa cổng Organizer và Attendee.
-        if ($user->role !== $data['required_role']) {
-            return response()->json(['message' => 'Bạn không có quyền truy cập vào cổng này'], 403);
-        }
-
-        return $this->respondWithToken($user);
-    }
+         return $this->respondWithToken($user);
+     }
 
     private function registerWithRole(Request $request, string $role): JsonResponse
     {
