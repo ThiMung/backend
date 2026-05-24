@@ -61,6 +61,18 @@ class RegistrationController extends Controller
         ], 201);
     }
 
+    public function myRegistrations(): JsonResponse
+    {
+        $registrations = Registration::query()
+            ->with('event')
+            ->where('user_id', Auth::id())
+            ->where('status', '!=', 'cancelled')
+            ->latest()
+            ->get();
+
+        return response()->json($registrations);
+    }
+
     public function destroy(Event $event): JsonResponse
     {
         DB::transaction(function () use ($event) {

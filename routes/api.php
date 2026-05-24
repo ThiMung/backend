@@ -16,7 +16,7 @@ Route::prefix('organizer')->group(function () {
 
 Route::prefix('attendee')->group(function () {
     Route::post('/register', [AuthController::class, 'registerAttendee']);
-    Route::post('/login', [AuthController::class, 'login']); 
+    Route::post('/login', [AuthController::class, 'login']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -30,6 +30,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:attendee')->prefix('attendee')->group(function () {
         Route::post('/registrations', [RegistrationController::class, 'store']);
+        Route::get('/my-registrations', [RegistrationController::class, 'myRegistrations']);
         Route::delete('/registrations/{event}', [RegistrationController::class, 'destroy']);
     });
 });
