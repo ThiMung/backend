@@ -69,6 +69,40 @@ class OrganizerEventController extends Controller
         ], 201);
     }
 
+    public function show(Event $event): JsonResponse
+    {
+        $this->authorizeOrganizer($event);
+        $this->loadRegistrationCount($event);
+
+        return response()->json(['event' => $event]);
+    }
+
+    public function update(Request $request, Event $event): JsonResponse
+    {
+        $this->authorizeOrganizer($event);
+
+        $data = $this->validateEvent($request);
+        $startTime = Carbon::parse($data['start_time']);
+
+        $event->update([
+            'title' => $data['title'],
+            'description' => $data['description'],
+            'location' => $data['location'],
+            'category' => $data['category'],
+            'start_time' => $startTime,
+            'end_time' => $startTime->copy()->addHours(3),
+            'capacity' => $data['capacity'],
+            'image_url' => $data['image_url'] ?? $event->image_url ?? self::DEFAULT_EVENT_IMAGE,
+        ]);
+
+        $this->loadRegistrationCount($event);
+
+        return response()->json([
+            'message' => 'Event updated successfully.',
+            'event' => $event,
+        ]);
+    }
+
     public function updateStatus(Request $request, Event $event): JsonResponse
     {
         $this->authorizeOrganizer($event);

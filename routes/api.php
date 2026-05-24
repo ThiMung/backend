@@ -24,6 +24,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:organizer')->prefix('organizer')->group(function () {
         Route::get('/events', [OrganizerEventController::class, 'index']);
         Route::post('/events', [OrganizerEventController::class, 'store']);
+        Route::get('/events/{event}', [OrganizerEventController::class, 'show']);
+        Route::put('/events/{event}', [OrganizerEventController::class, 'update']);
         Route::patch('/events/{event}/status', [OrganizerEventController::class, 'updateStatus']);
         Route::delete('/events/{event}', [OrganizerEventController::class, 'destroy']);
     });
