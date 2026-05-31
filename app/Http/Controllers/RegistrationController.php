@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
+use App\Models\Notification;
 use App\Models\Registration;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ class RegistrationController extends Controller
             'event_id' => ['required', 'exists:events,id'],
         ]);
 
-        $registration = DB::transaction(function () use ($data) {
+        [$registration, $shouldNotify] = DB::transaction(function () use ($data) {
             $event = Event::query()
                 ->where('status', 'published')
                 ->lockForUpdate()
@@ -30,7 +31,7 @@ class RegistrationController extends Controller
                 ->first();
 
             if ($existing && $existing->status !== 'cancelled') {
-                return $existing;
+                return [$existing, false];
             }
 
             $confirmedCount = Registration::query()
@@ -41,7 +42,7 @@ class RegistrationController extends Controller
             $status = $confirmedCount < $event->capacity ? 'confirmed' : 'waitlist';
             $position = $status === 'waitlist' ? $this->nextWaitlistPosition($event->id) : null;
 
-            return Registration::updateOrCreate(
+            $registration = Registration::updateOrCreate(
                 [
                     'event_id' => $event->id,
                     'user_id' => Auth::id(),
@@ -51,7 +52,13 @@ class RegistrationController extends Controller
                     'position' => $position,
                 ],
             );
+
+            return [$registration->load('event'), true];
         });
+
+        if ($shouldNotify) {
+            $this->notifyRegistrationResult($registration);
+        }
 
         return response()->json([
             'message' => $registration->status === 'confirmed'
@@ -136,6 +143,14 @@ class RegistrationController extends Controller
             'position' => null,
         ]);
 
+        $this->createNotification(
+            $nextRegistration->user_id,
+            $eventId,
+            'waitlist_promoted',
+            'You are now confirmed',
+            'A spot opened up and your registration has been confirmed.',
+        );
+
         $this->moveWaitlistForward($eventId, 1);
     }
 
@@ -146,5 +161,46 @@ class RegistrationController extends Controller
             ->where('status', 'waitlist')
             ->where('position', '>', $fromPosition)
             ->decrement('position');
+    }
+
+    private function notifyRegistrationResult(Registration $registration): void
+    {
+        $event = $registration->event;
+
+        if ($registration->status === 'confirmed') {
+            $this->createNotification(
+                $registration->user_id,
+                $registration->event_id,
+                'registration_confirmed',
+                'Registration confirmed',
+                "You are confirmed for {$event->title}.",
+            );
+
+            return;
+        }
+
+        $this->createNotification(
+            $registration->user_id,
+            $registration->event_id,
+            'registration_waitlisted',
+            'You are on the waitlist',
+            "The event {$event->title} is full. You have been added to the waitlist.",
+        );
+    }
+
+    private function createNotification(
+        int $userId,
+        int $eventId,
+        string $type,
+        string $title,
+        string $message,
+    ): void {
+        Notification::create([
+            'user_id' => $userId,
+            'event_id' => $eventId,
+            'type' => $type,
+            'title' => $title,
+            'message' => $message,
+        ]);
     }
 }

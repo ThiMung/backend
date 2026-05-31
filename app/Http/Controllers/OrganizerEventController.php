@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
+use App\Models\Notification;
+use App\Models\Registration;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -95,6 +97,13 @@ class OrganizerEventController extends Controller
             'image_url' => $data['image_url'] ?? $event->image_url ?? self::DEFAULT_EVENT_IMAGE,
         ]);
 
+        $this->notifyRegisteredAttendees(
+            $event,
+            'event_updated',
+            'Event updated',
+            "The event {$event->title} has been updated.",
+        );
+
         $this->loadRegistrationCount($event);
 
         return response()->json([
@@ -122,6 +131,16 @@ class OrganizerEventController extends Controller
         }
 
         $event->update(['status' => $nextStatus]);
+
+        if ($nextStatus === 'cancelled') {
+            $this->notifyRegisteredAttendees(
+                $event,
+                'event_cancelled',
+                'Event cancelled',
+                "The event {$event->title} has been cancelled.",
+            );
+        }
+
         $this->loadRegistrationCount($event);
 
         return response()->json([
@@ -168,5 +187,27 @@ class OrganizerEventController extends Controller
         $event->loadCount([
             'registrations as registered_count' => fn ($query) => $query->where('status', 'confirmed'),
         ]);
+    }
+
+    private function notifyRegisteredAttendees(
+        Event $event,
+        string $type,
+        string $title,
+        string $message,
+    ): void {
+        $userIds = Registration::query()
+            ->where('event_id', $event->id)
+            ->whereIn('status', ['confirmed', 'waitlist'])
+            ->pluck('user_id');
+
+        $userIds->each(function (int $userId) use ($event, $type, $title, $message) {
+            Notification::create([
+                'user_id' => $userId,
+                'event_id' => $event->id,
+                'type' => $type,
+                'title' => $title,
+                'message' => $message,
+            ]);
+        });
     }
 }

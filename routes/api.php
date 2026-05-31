@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrganizerEventController;
 use App\Http\Controllers\RegistrationController;
 use Illuminate\Support\Facades\Route;
@@ -34,5 +35,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/registrations', [RegistrationController::class, 'store']);
         Route::get('/my-registrations', [RegistrationController::class, 'myRegistrations']);
         Route::delete('/registrations/{event}', [RegistrationController::class, 'destroy']);
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+        Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
     });
 });
