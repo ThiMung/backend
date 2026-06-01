@@ -67,7 +67,7 @@ class SampleDataSeeder extends Seeder
         ];
 
         // --- 3. KHỞI TẠO MẢNG 12 SỰ KIỆN MẪU PHÂN BỔ ĐỀU CHO 6 CATEGORIES ---
-        // Đảm bảo mỗi category xuất hiện chính xác 2 lần với ảnh Unsplash chất lượng cao
+        // Đảm bảo mỗi category xuất hiện 2 sự kiện với ảnh Unsplash
         $eventsData = [
             // --- CẶP DANH MỤC: MUSIC ---
             [
@@ -229,7 +229,7 @@ class SampleDataSeeder extends Seeder
                 'start_time' => now()->addDays(7 + $index),
                 'end_time' => now()->addDays(7 + $index)->addHours(4),
                 'capacity' => $data['capacity'],
-                'status' => 'published', // Đặt trạng thái ban đầu là đã xuất bản theo yêu cầu nghiệp vụ
+                'status' => 'published',
             ]);
 
             // Lấy lượng attendee ra để thực hiện logic phân chia hàng đợi
@@ -241,7 +241,6 @@ class SampleDataSeeder extends Seeder
             foreach ($eventAttendees as $attendee) {
                 $count++;
 
-                // Áp dụng chặt chẽ nghiệp vụ quy định bởi giảng viên:
                 // Nếu lượt đăng ký hiện hành vượt quá sức chứa (capacity) của sự kiện đó
                 if ($count > $event->capacity) {
                     $status = 'waitlist';
@@ -259,7 +258,7 @@ class SampleDataSeeder extends Seeder
                     'position' => $position,
                 ]);
 
-                // Chỉ tạo Review (Đánh giá) mẫu cho những thành viên đã được 'confirmed'
+                // Chỉ tạo Review mẫu cho những thành viên đã được 'confirmed'
                 if ($status === 'confirmed') {
                     Review::create([
                         'event_id' => $event->id,

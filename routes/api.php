@@ -4,10 +4,12 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\OrganizerEventController;
 use App\Http\Controllers\RegistrationController;
+use App\Http\Controllers\ReviewController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/events', [EventController::class, 'index']);
 Route::get('/events/{id}', [EventController::class, 'show']);
+Route::get('/events/{eventId}/reviews', [ReviewController::class, 'index']);
 
 Route::prefix('organizer')->group(function () {
     Route::post('/register', [AuthController::class, 'registerOrganizer']);
@@ -34,5 +36,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/registrations', [RegistrationController::class, 'store']);
         Route::get('/my-registrations', [RegistrationController::class, 'myRegistrations']);
         Route::delete('/registrations/{event}', [RegistrationController::class, 'destroy']);
+        Route::post('/events/{eventId}/reviews', [ReviewController::class, 'store']);
     });
 });
