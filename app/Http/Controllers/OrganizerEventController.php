@@ -74,7 +74,12 @@ class OrganizerEventController extends Controller
     public function show(Event $event): JsonResponse
     {
         $this->authorizeOrganizer($event);
+        $event->load([
+            'organizer:id,name',
+            'reviews.user:id,name',
+        ]);
         $this->loadRegistrationCount($event);
+        $event->loadAvg('reviews', 'rating');
 
         return response()->json(['event' => $event]);
     }
@@ -126,10 +131,10 @@ class OrganizerEventController extends Controller
         // Vòng đời chỉ đi tới: draft -> published -> cancelled/ended.
         if (!in_array($nextStatus, self::ALLOWED_STATUS_TRANSITIONS[$currentStatus] ?? [], true)) {
             return response()->json([
-                'message' => 'Không thể chuyển trạng thái sự kiện theo chiều ngược hoặc từ trạng thái đã khóa.',
+                'message' => 'Cannot transition event status to the requested state.',
             ], 422);
         }
-
+    
         $event->update(['status' => $nextStatus]);
 
         if ($nextStatus === 'cancelled') {
@@ -155,7 +160,7 @@ class OrganizerEventController extends Controller
 
         if ($event->status === 'published') {
             return response()->json([
-                'message' => 'Không xóa sự kiện đã published. Hãy chuyển sang cancelled hoặc ended.',
+                'message' => 'Cannot delete a published event. Please cancel or end the event first.',
             ], 422);
         }
 
@@ -179,7 +184,7 @@ class OrganizerEventController extends Controller
 
     private function authorizeOrganizer(Event $event): void
     {
-        abort_if($event->organizer_id !== Auth::id(), 403, 'Bạn không có quyền quản lý sự kiện này.');
+        abort_if($event->organizer_id !== Auth::id(), 403, 'You are not the organizer of this event.');
     }
 
     private function loadRegistrationCount(Event $event): void

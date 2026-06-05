@@ -13,6 +13,7 @@ class EventController extends Controller
 
         $query = Event::query()
             ->where('status', 'published')
+            ->where('status', '!=', 'ended')
             ->with('organizer:id,name')
             ->withCount([
                 'registrations as registered_count' => fn ($query) => $query->where('status', 'confirmed'),
@@ -52,8 +53,9 @@ class EventController extends Controller
     public function show(string $id): JsonResponse
     {
         $event = Event::query()
-            ->where('status', 'published')
+            ->whereIn('status', ['published', 'ended'])
             ->with('organizer:id,name')
+            ->with(['reviews.user:id,name'])
             ->withCount([
                 'registrations as registered_count' => fn ($query) => $query->where('status', 'confirmed'),
             ])
@@ -88,6 +90,15 @@ class EventController extends Controller
             'average_rating' => $event->reviews_avg_rating === null
                 ? null
                 : round((float) $event->reviews_avg_rating, 1),
+            'reviews' => $event->relationLoaded('reviews')
+                ? $event->reviews->map(fn ($review) => [
+                    'id' => $review->id,
+                    'rating' => $review->rating,
+                    'comment' => $review->comment,
+                    'created_at' => $review->created_at?->toDateTimeString(),
+                    'user' => $review->user ? ['id' => $review->user->id, 'name' => $review->user->name] : null,
+                ])->toArray()
+                : [],
         ];
     }
 }

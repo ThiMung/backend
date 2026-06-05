@@ -5,10 +5,12 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrganizerEventController;
 use App\Http\Controllers\RegistrationController;
+use App\Http\Controllers\ReviewController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/events', [EventController::class, 'index']);
 Route::get('/events/{id}', [EventController::class, 'show']);
+Route::get('/events/{eventId}/reviews', [ReviewController::class, 'index']);
 
 Route::prefix('organizer')->group(function () {
     Route::post('/register', [AuthController::class, 'registerOrganizer']);
@@ -39,5 +41,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
         Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
         Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+        Route::post('/events/{eventId}/reviews', [ReviewController::class, 'store']);
     });
 });
