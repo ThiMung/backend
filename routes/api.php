@@ -20,6 +20,7 @@ Route::prefix('organizer')->group(function () {
 Route::prefix('attendee')->group(function () {
     Route::post('/register', [AuthController::class, 'registerAttendee']);
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/auth/google', [AuthController::class, 'googleLogin']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
